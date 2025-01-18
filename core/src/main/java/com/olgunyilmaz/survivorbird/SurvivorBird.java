@@ -19,6 +19,7 @@ public class SurvivorBird extends ApplicationAdapter {
     Texture enemy3;
 
     float ufoX = 0;
+    float enemyX = 0;
     float ufoY = 0;
     float velocity = 0;
     double gravity = 0.1;
@@ -47,12 +48,30 @@ public class SurvivorBird extends ApplicationAdapter {
         batch.draw(background,0,0,Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
 
         if (!isStarted){
+            enemyX = (int) (Gdx.graphics.getWidth() * 0.75);
             if (Gdx.input.justTouched()){
                 isStarted = true;
                 ufoY += velocity;
             }
 
         } else{
+            if (ufoX < Gdx.graphics.getWidth()){
+                ufoX += Gdx.graphics.getWidth()/200;
+                enemyX -= Gdx.graphics.getWidth()/200;
+            }else{
+                ufoX = 0;
+            }
+
+            if (enemyX < 0){
+                enemyX = Gdx.graphics.getWidth();
+            }
+
+
+
+
+            batch.draw(enemy1,enemyX,850,enemy1.getWidth()/10,enemy1.getHeight()/10);
+            batch.draw(enemy2,enemyX,550,enemy1.getWidth()/10,enemy1.getHeight()/10);
+            batch.draw(enemy3,enemyX,250,enemy1.getWidth()/10,enemy1.getHeight()/10);
 
             if (ufoY > 0 || velocity < 0){
                 velocity += gravity;
