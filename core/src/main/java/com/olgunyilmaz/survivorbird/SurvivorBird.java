@@ -1,16 +1,14 @@
 package com.olgunyilmaz.survivorbird;
 
-import static java.lang.Math.abs;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.math.Intersector;
 
 import java.util.Random;
 
@@ -34,19 +32,25 @@ public class SurvivorBird extends ApplicationAdapter {
     float ufoY = 0;
     float velocity = 0;
 
+    int score = 0;
+    int scoredEnemy = 0;
+
 
     double gravity = 0.1;
-    boolean isStarted = false;
+    int gameState = 0; // 0 : not started, 1 : started, 2 : finished
     float [] enemyX= new float[numEnemies];
     float distance;
     float enemyVelocity = 2;
     Random random;
 
     Circle ufoCircle;
-    ShapeRenderer shapeRenderer;
+
     Circle [] monsterCircles1;
     Circle [] monsterCircles2;
     Circle [] monsterCircles3;
+
+    BitmapFont font;
+    BitmapFont gameOverFont;
 
     @Override
     public void create() {
@@ -56,6 +60,14 @@ public class SurvivorBird extends ApplicationAdapter {
         monster1 = new Texture("monster.png");
         monster2 = new Texture("monster.png");
         monster3 = new Texture("monster.png");
+
+        font = new BitmapFont();
+        font.setColor(Color.WHITE);
+        font.getData().setScale(6);
+
+        gameOverFont = new BitmapFont();
+        gameOverFont.setColor(Color.WHITE);
+        gameOverFont.getData().setScale(4);
 
         distance = Gdx.graphics.getWidth()/2;
         random = new Random();
@@ -67,8 +79,6 @@ public class SurvivorBird extends ApplicationAdapter {
         monsterCircles1 = new Circle[numEnemies];
         monsterCircles2 = new Circle[numEnemies];
         monsterCircles3 = new Circle[numEnemies];
-
-        shapeRenderer = new ShapeRenderer();
 
 
         for (int i = 0; i < numEnemies; i++){
@@ -90,14 +100,22 @@ public class SurvivorBird extends ApplicationAdapter {
 
         batch.draw(background,0,0,Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
 
-        if (!isStarted){
+        if (gameState == 0){// not started
             monsterX = (int) (Gdx.graphics.getWidth() * 0.75);
             if (Gdx.input.justTouched()){
-                isStarted = true;
+                gameState = 1;
                 ufoY += velocity;
             }
 
-        } else{
+        } else if(gameState == 1){ // started
+
+            if (enemyX[scoredEnemy] < ufoX){
+                score ++;
+                if (scoredEnemy < numEnemies-1){
+                    scoredEnemy = (scoredEnemy + 1) % (numEnemies-1);
+                }
+            }
+
             if (ufoX < Gdx.graphics.getWidth()){
                 ufoX += Gdx.graphics.getWidth()/200;
                 monsterX -= Gdx.graphics.getWidth()/200;
@@ -143,30 +161,56 @@ public class SurvivorBird extends ApplicationAdapter {
             }
 
 
-            if (ufoY > 0 || velocity < 0){
+            if (ufoY > 0){
                 velocity += gravity;
                 ufoY -= velocity;
+            } else if (ufoY < 0) {
+                gameState = 2;
             }
+
+        }else if(gameState == 2){ // finished
+            gameOverFont.draw(batch,"GAME OVER",Gdx.graphics.getWidth()/2-100,Gdx.graphics.getHeight()/2);
+            if (Gdx.input.justTouched()){
+                gameState = 1; // restart
+                ufoY = Gdx.graphics.getHeight()/2;
+
+                for (int i = 0; i < numEnemies; i++){
+                    monster1offSet[i] = (random.nextFloat()) * Gdx.graphics.getHeight();
+                    monster2offSet[i] = (random.nextFloat()) * Gdx.graphics.getHeight();
+                    monster3offSet[i] = (random.nextFloat()) * Gdx.graphics.getHeight();
+
+                    enemyX[i] = Gdx.graphics.getWidth() - monster1.getWidth() / 2 + i * distance;
+
+                    monsterCircles1[i] = new Circle();
+                    monsterCircles2[i] = new Circle();
+                    monsterCircles3[i] = new Circle();
+                }
+
+                velocity = 0;
+                score = 0;
+                scoredEnemy = 0;
+            }
+
 
         }
         batch.draw(ufo,ufoX,ufoY, ufo.getWidth()/10,ufo.getHeight()/10);
 
+        font.draw(batch, String.valueOf(score),100,200);
+
         batch.end();
+
+
 
         ufoCircle.set(ufoX + ufo.getWidth()/20,ufoY + ufo.getHeight()/20,ufo.getWidth()/20);
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(Color.BLUE);
-        shapeRenderer.circle(ufoCircle.x,ufoCircle.y,ufoCircle.radius);
-
 
         for (int i = 0; i < numEnemies; i++){
-            shapeRenderer.circle(enemyX[i],monster1offSet[i], monster1.getWidth()/10,monster1.getHeight()/10);
-            shapeRenderer.circle(enemyX[i],monster2offSet[i], monster2.getWidth()/10,monster2.getHeight()/10);
-            shapeRenderer.circle(enemyX[i],monster3offSet[i], monster3.getWidth()/10,monster3.getHeight()/10);
-
+            if (Intersector.overlaps(ufoCircle,monsterCircles1[i]) ||
+                Intersector.overlaps(ufoCircle,monsterCircles2[i]) ||
+                Intersector.overlaps(ufoCircle,monsterCircles3[i]) ){
+                gameState = 2;
+            }
         }
-        shapeRenderer.end();
 
     }
 
