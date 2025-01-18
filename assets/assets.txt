@@ -1,3 +1,3 @@
 background.png
-enemy.png
+monster.png
 ufo.png
