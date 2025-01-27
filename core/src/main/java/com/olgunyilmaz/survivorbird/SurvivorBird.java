@@ -14,6 +14,7 @@ import java.util.Random;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class SurvivorBird extends ApplicationAdapter {
+    DataSaver dataSaver;
     SpriteBatch batch;
     Texture background;
     Texture ufo;
@@ -33,6 +34,7 @@ public class SurvivorBird extends ApplicationAdapter {
     float velocity = 0;
 
     int score = 0;
+    int highScore;
     int scoredEnemy = 0;
 
 
@@ -61,15 +63,18 @@ public class SurvivorBird extends ApplicationAdapter {
         monster2 = new Texture("monster.png");
         monster3 = new Texture("monster.png");
 
+        dataSaver = new DataSaver();
+        highScore = dataSaver.fetchData();
+
         font = new BitmapFont();
         font.setColor(Color.WHITE);
-        font.getData().setScale(6);
+        font.getData().setScale(3);
 
         gameOverFont = new BitmapFont();
         gameOverFont.setColor(Color.WHITE);
-        gameOverFont.getData().setScale(4);
+        gameOverFont.getData().setScale(6);
 
-        distance = Gdx.graphics.getWidth()/2;
+        distance = Gdx.graphics.getWidth()/3;
         random = new Random();
 
         ufoX = Gdx.graphics.getWidth()/5;
@@ -111,8 +116,11 @@ public class SurvivorBird extends ApplicationAdapter {
 
             if (enemyX[scoredEnemy] < ufoX){
                 score ++;
+                if (score > highScore){
+                    updateHighScore();
+                }
                 if (scoredEnemy < numEnemies-1){
-                    scoredEnemy = (scoredEnemy + 1) % (numEnemies-1);
+                    scoredEnemy = (scoredEnemy+1) % (numEnemies-1);
                 }
             }
 
@@ -169,7 +177,7 @@ public class SurvivorBird extends ApplicationAdapter {
             }
 
         }else if(gameState == 2){ // finished
-            gameOverFont.draw(batch,"GAME OVER",Gdx.graphics.getWidth()/2-100,Gdx.graphics.getHeight()/2);
+            gameOverFont.draw(batch,"GAME OVER",(int)(Gdx.graphics.getWidth()/2.7),Gdx.graphics.getHeight()/2);
             if (Gdx.input.justTouched()){
                 gameState = 1; // restart
                 ufoY = Gdx.graphics.getHeight()/2;
@@ -195,7 +203,8 @@ public class SurvivorBird extends ApplicationAdapter {
         }
         batch.draw(ufo,ufoX,ufoY, ufo.getWidth()/10,ufo.getHeight()/10);
 
-        font.draw(batch, String.valueOf(score),100,200);
+        font.draw(batch, "Score : "+score,(int)(Gdx.graphics.getWidth()*.05),100);
+        font.draw(batch,"High Score : "+highScore,(int)(Gdx.graphics.getWidth()*.2), 100);
 
         batch.end();
 
@@ -212,6 +221,11 @@ public class SurvivorBird extends ApplicationAdapter {
             }
         }
 
+    }
+
+    private void updateHighScore(){
+        dataSaver.saveData(score);
+        highScore = score;
     }
 
     @Override
